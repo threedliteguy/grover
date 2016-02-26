@@ -1,6 +1,9 @@
 package grover.utils
 
 import com.typesafe.config.ConfigFactory
+import grover.GroverI
+import grover.impl.flink.Grover
+import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkContext, SparkConf}
 
@@ -19,8 +22,12 @@ object Config {
 
   val sparkContext = new SparkContext(sparkConf)
 
+  //val flinkEnvironment = ExecutionEnvironment.createLocalEnvironment()
+  val flinkEnvironment = ExecutionEnvironment.getExecutionEnvironment
+
 
   object app {
+
     val appConf = config.getConfig("app")
 
     val systemName = appConf.getString("systemName")
@@ -28,8 +35,24 @@ object Config {
     val port = appConf.getInt("port")
     val groverServiceName = appConf.getString("groverServiceName")
 
+    val groverImplType = appConf.getString("impl")
+
   }
 
+  val sparkImpl = grover.impl.spark.Grover
+  val flinkImpl = grover.impl.flink.Grover
 
+  def getImpl():GroverI = {
+
+    println("Config.app.groverImplType=" + Config.app.groverImplType)
+
+    Config.app.groverImplType match {
+      case "spark" => sparkImpl
+      case "flink" => flinkImpl
+      case _ => throw new Exception("IMPL_TYPE not set")
+
+    }
+
+  }
 
 }
