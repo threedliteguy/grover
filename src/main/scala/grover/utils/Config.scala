@@ -41,6 +41,7 @@ object Config {
 
   val sparkImpl = grover.impl.spark.Grover
   val flinkImpl = grover.impl.flink.Grover
+  val aggregateMessagesImpl = grover.impl.aggregateMessages.Grover
 
   def getImpl():GroverI = {
 
@@ -49,6 +50,7 @@ object Config {
     Config.app.groverImplType match {
       case "spark" => sparkImpl
       case "flink" => flinkImpl
+      case "aggregateMessages" => aggregateMessagesImpl
       case _ => throw new Exception("IMPL_TYPE not set")
 
     }
