@@ -13,13 +13,19 @@ import scala.concurrent.duration._
 
 // Spray and swagger setup courtesy of https://github.com/Gneotux/spray-swagger-slick-seed (Apache license)
 
-object Boot extends App {
+object Boot //extends App 
+{
 
-  implicit val system = ActorSystem(app.systemName)
-
-  val userActor: ActorRef = system.actorOf(Props(classOf[ApiRouterActor],GroverServiceI), app.groverServiceName)
-
-  implicit val timeout = Timeout(60.seconds)
-  IO(Http) ? Http.Bind(userActor, interface = app.interface, port = app.port)
+  def main(args:Array[String]):Unit =
+    
+      
+    implicit val system = ActorSystem(app.systemName)
+  
+    val userActor: ActorRef = system.actorOf(Props(classOf[ApiRouterActor],GroverServiceI), app.groverServiceName)
+  
+    implicit val timeout = Timeout(60.seconds)
+    IO(Http) ? Http.Bind(userActor, interface = app.interface, port = app.port)
+    
+  }
 
 }

@@ -51,7 +51,8 @@ object Config {
       case "spark" => sparkImpl
       case "flink" => flinkImpl
       case "aggregateMessages" => aggregateMessagesImpl
-      case _ => throw new Exception("IMPL_TYPE not set")
+//      case _ => throw new Exception("IMPL_TYPE not set")
+      case _ => sparkImpl
 
     }
 
