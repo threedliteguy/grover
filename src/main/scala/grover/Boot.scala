@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 object Boot //extends App 
 {
 
-  def main(args:Array[String]):Unit = {
+  def main(args:Array[String]) {
     
       
     implicit val system = ActorSystem(app.systemName)
