@@ -1,5 +1,15 @@
 package grover.impl.flink
 
+import breeze.math.Complex
+
+import grover.GroverI
+import grover.utils.Config
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.graphx._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.mutable.ListBuffer
 
 import grover.GroverI
 import grover.utils.Config
@@ -15,15 +25,15 @@ import org.apache.flink.graph.{EdgeDirection, Edge, Vertex}
 
 
 
-case class VType(var value:Array[Double], connected:Array[Boolean])
-case class MType(var value:Array[Double])
+case class VType(var value:Array[Complex], connected:Array[Boolean])
+case class MType(var value:Array[Complex])
 
 object Grover extends GroverI {
 
 
   def main(args: Array[String]) {
 
-    val result: Array[Array[Double]] = computeGraph(Array(0d, 0d, 1d, 0d), 10, 21)
+    val result: Array[Array[Complex]] = computeGraph(Array(Complex.zero, Complex.zero, Complex.one, Complex.zero), 10, 21)
 
     val formatted: String = getSquareGraphFormatted(result, true)
 
@@ -31,7 +41,7 @@ object Grover extends GroverI {
 
   }
 
-  override def computeGraph(initialVector:Array[Double], iterations:Int, size:Int): Array[Array[Double]] = {
+  override def computeGraph(initialVector:Array[Complex], iterations:Int, size:Int): Array[Array[Complex]] = {
 
     val env:ExecutionEnvironment = Config.flinkEnvironment
 
@@ -43,7 +53,7 @@ object Grover extends GroverI {
     // Hack: Unfortunately I dont know a way to send a message back to the origin during the first superstep when all messages are outgoing (to set the origin vertex to 0) in Gelly like you can in GraphX.
     // So setting surrounding values to a small number instead of 0 forces vertex processing.
     // Only really needs to be done on the vertices adjacent to origin but to avoid potential avoid artifacts I set everywhere,
-    val smallvalue = 0.00000000000001d
+    val smallvalue = Complex(0.00000000000001d,0.00000000000001d)
 
     var vcount: Long = 0
     for (y: Int <- 0 until size) {
@@ -81,7 +91,7 @@ object Grover extends GroverI {
     //        println(getSquareGraphFormatted(getSquareGraph(graph, size), true))
     //        printSum(graph)
 
-    val zeroMsg = Array[Double](0d, 0d, 0d, 0d)
+    val zeroMsg = Array[Complex](Complex.zero, Complex.zero, Complex.zero, Complex.zero)
 
     final class GatherGrover extends GatherFunction[VType, Int, MType] {
 
@@ -89,13 +99,13 @@ object Grover extends GroverI {
 
         val v = neighbor.getNeighborValue.value
 
-        if (v(0) == 0 && v(1) == 0 && v(2) == 0 && v(3) == 0) {
+        if (v(0) == Complex.zero && v(1) == Complex.zero && v(2) == Complex.zero && v(3) == Complex.zero) {
           return new MType(zeroMsg)
         }
 
         val direction = neighbor.getEdgeValue
 
-        val g: Array[Double] = grover(v)
+        val g: Array[Complex] = grover(v)
 
         val m: MType = new MType(mask(g, direction))
         if (norm(m.value) == 0) return new MType(zeroMsg)
@@ -116,7 +126,7 @@ object Grover extends GroverI {
     final class ApplyGrover extends ApplyFunction[Long, VType, MType] {
 
       override def apply(m: MType, v: VType) = {
-        if (norm(m.value) > 0) {
+        if (norm(m.value).abs > 0) {
           v.value = m.value
           setResult(v)
         }
@@ -128,15 +138,15 @@ object Grover extends GroverI {
     parameters.setDirection(EdgeDirection.OUT)
     val result = graph.runGatherSumApplyIteration(new GatherGrover, new SumGrover, new ApplyGrover, iterations, parameters)
 
-    val r: Array[Array[Double]] = getSquareGraph(result, size)
+    val r: Array[Array[Complex]] = getSquareGraph(result, size)
     printSum(result)
 
     r
   }
 
 
-  def getSquareGraph(g: Graph[Long, VType, Int], size: Int): Array[Array[Double]] = {
-    val result: Array[Array[Double]] = Array.ofDim[Double](size, size)
+  def getSquareGraph(g: Graph[Long, VType, Int], size: Int): Array[Array[Complex]] = {
+    val result: Array[Array[Complex]] = Array.ofDim[Complex](size, size)
 
     g.getVertices.collect.sortBy(_.getId).foreach { p => {
       val anorm = norm(p.getValue.value)

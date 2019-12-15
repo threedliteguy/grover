@@ -1,5 +1,16 @@
 package grover.impl.aggregateMessages
 
+import breeze.math.Complex
+
+import grover.GroverI
+import grover.utils.Config
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.graphx._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.mutable.ListBuffer
+
 import grover.GroverI
 import grover.utils.Config
 import org.apache.log4j.{Level, Logger}
@@ -9,9 +20,9 @@ import org.apache.spark.sql.SQLContext
 
 import scala.collection.mutable.ListBuffer
 
-case class VType(value:Array[Double], connected:Array[Boolean])
+case class VType(value:Array[Complex], connected:Array[Boolean])
 case class EType(value:Int)
-case class MType(value:Array[Double])
+case class MType(value:Array[Complex])
 
 // Using GraphX aggregateMessages api similar to dataframes BeliefPropagation example
 object Grover  extends GroverI {
@@ -23,7 +34,7 @@ object Grover  extends GroverI {
     Logger.getLogger("akka").setLevel(Level.ERROR)
 
 
-    val result: Array[Array[Double]] = computeGraph(Array(0d, 0d, 1d, 0d), 10, 21)
+    val result: Array[Array[Complex]] = computeGraph(Array(Complex.zero, Complex.zero, Complex.one, Complex.zero), 10, 21)
 
     val formatted: String = getSquareGraphFormatted(result, true)
 
@@ -33,7 +44,7 @@ object Grover  extends GroverI {
 
   }
 
-  override def computeGraph(initialVector:Array[Double], iterations:Int, size:Int): Array[Array[Double]] = {
+  override def computeGraph(initialVector:Array[Complex], iterations:Int, size:Int): Array[Array[Complex]] = {
 
     val sc = Config.sparkContext
     val sqlContext = SQLContext.getOrCreate(Config.sparkContext)
@@ -49,7 +60,7 @@ object Grover  extends GroverI {
 
         val connected = Array(x > 0, x < size - 1, y < size - 1, y > 0)
 
-        var value = Array(0d, 0d, 0d, 0d)
+        var value = Array(Complex.zero, Complex.zero, Complex.zero, Complex.zero)
         if (y == Math.floor(size / 2.0) && x == Math.floor(size / 2.0)) value = initialVector
         val p = (vcount, new VType(value, connected))
 
@@ -74,9 +85,9 @@ object Grover  extends GroverI {
     var graph: Graph[VType, EType] = Graph(vertices, edges)
 
 
-    def getOutMessage(v:Array[Double], direction:Int): Array[Double] = {
-       val g: Array[Double] = grover(v)
-       val m: Array[Double] = mask(g, direction)
+    def getOutMessage(v:Array[Complex], direction:Int): Array[Complex] = {
+       val g: Array[Complex] = grover(v)
+       val m: Array[Complex] = mask(g, direction)
       m
     }
 
@@ -111,8 +122,8 @@ object Grover  extends GroverI {
 
   }
 
-  def getSquareGraph(g: Graph[VType, EType], size: Int): Array[Array[Double]] = {
-    val result: Array[Array[Double]] = Array.ofDim[Double](size, size)
+  def getSquareGraph(g: Graph[VType, EType], size: Int): Array[Array[Complex]] = {
+    val result: Array[Array[Complex]] = Array.ofDim[Complex](size, size)
 
     g.vertices.collect.sortBy(_._1).foreach { p => {
       val anorm = norm(p._2.value)

@@ -49,7 +49,7 @@ li{
 </head>
 <body>
   <h1>Grover coin probability distributions for different initial conditions.  Visualization with D3 surface plots <a href="http://bl.ocks.org/supereggbert/aff58196188816576af0">[link]</a></h1>
-  Initial vector: <input id="initialVector" type="text" value="1,1,-1,-1" />
+  Initial vector: <input id="initialVector" type="text" value="1,i,-1,-i" />
   Iterations: <input id="iterations" type="text" value="20" />
   Size: <input id="size" type="text" value="35" />
   <p>Drag graph to change view</p>
@@ -81,19 +81,7 @@ li{
   }
 
 
-  function dataFromFormular(func){
-    var output=[];
-    for(var x=-20;x<20;x++){
-      var f0=[];            
-      output.push(f0);
-      for(var y=-20;y<20;y++){
-          f0.push(func(x,y));
-      }
-    }
-    return output;
-  }
-
-  var surfaces=[
+   var surfaces=[
     {
       name: 'Dataset 1',
       data: []
